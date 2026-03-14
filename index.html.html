@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Maths Calculator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <style>
+        :root { --pink: #fce4ec; --dark-pink: #d81b60; --btn-bg: #fff; }
+        body { background: var(--pink); font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; overflow: hidden; }
+        
+        /* Floating Symbols */
+        .symbol { position: absolute; color: rgba(216, 27, 96, 0.08); font-size: 1.5rem; z-index: -1; animation: float 15s infinite linear; }
+        @keyframes float { from { transform: translateY(110vh) rotate(0deg); } to { transform: translateY(-20vh) rotate(360deg); } }
+
+        .card { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 450px; z-index: 10; }
+        h1 { color: var(--dark-pink); text-align: center; margin-top: 0; font-size: 1.6rem; }
+        
+        .display-area { margin-bottom: 15px; }
+        input { width: 100%; padding: 12px; border: 2px solid #f8bbd0; border-radius: 10px; box-sizing: border-box; font-size: 1.1rem; outline: none; text-align: center; }
+        input:focus { border-color: var(--dark-pink); }
+
+        /* Button Grid */
+        .math-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+        .m-btn { background: var(--btn-bg); border: 1px solid #f8bbd0; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: serif; font-size: 1rem; transition: 0.2s; }
+        .m-btn:hover { background: #fff1f5; border-color: var(--dark-pink); color: var(--dark-pink); }
+        .m-btn.op { background: #fff5f8; color: var(--dark-pink); }
+
+        .action-btns { display: flex; gap: 10px; margin-bottom: 20px; }
+        .calc { flex: 2; background: var(--dark-pink); color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .clear { flex: 1; background: #eee; color: #555; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+
+        .res { display: none; background: #fff9fb; padding: 15px; border-radius: 12px; border: 1px solid #f8bbd0; }
+        .line { margin-bottom: 10px; border-bottom: 1px solid #fce4ec; padding-bottom: 5px; }
+        small { color: var(--dark-pink); font-size: 0.7rem; font-weight: 800; display: block; text-transform: uppercase; }
+        code { font-family: "Cambria", serif; color: #222; font-size: 1.1rem; display: block; }
+    </style>
+</head>
+<body>
+    <div id="bg"></div>
+    <div class="card">
+        <h1>Online Maths Calculator</h1>
+        
+        <div class="display-area">
+            <input type="text" id="eq" placeholder="0" readonly>
+            <div style="margin-top:10px; display:flex; align-items:center; gap:10px;">
+                <span style="font-size:0.8rem; font-weight:bold; color:#666">Variable:</span>
+                <input type="text" id="var" value="x" style="width:50px; padding:5px; font-size:0.9rem;">
+            </div>
+        </div>
+
+        <div class="math-grid">
+            <button class="m-btn op" onclick="add('sin(')">sin</button>
+            <button class="m-btn op" onclick="add('cos(')">cos</button>
+            <button class="m-btn op" onclick="add('tan(')">tan</button>
+            <button class="m-btn op" onclick="add('sqrt(')">√</button>
+            
+            <button class="m-btn" onclick="add('x')">x</button>
+            <button class="m-btn" onclick="add('y')">y</button>
+            <button class="m-btn" onclick="add('z')">z</button>
+            <button class="m-btn op" onclick="add('PI')">π</button>
+            
+            <button class="m-btn op" onclick="add('+')">+</button>
+            <button class="m-btn op" onclick="add('-')">-</button>
+            <button class="m-btn op" onclick="add('*')">×</button>
+            <button class="m-btn op" onclick="add('/')">÷</button>
+            
+            <button class="m-btn op" onclick="add('(')">(</button>
+            <button class="m-btn op" onclick="add(')')">)</button>
+            <button class="m-btn op" onclick="add('^')">^</button>
+            <button class="m-btn op" onclick="add(',')">,</button>
+        </div>
+
+        <div class="action-btns">
+            <button class="calc" onclick="solve()">Calculate Derivatives</button>
+            <button class="clear" onclick="clean()">Clear</button>
+        </div>
+
+        <div id="out" class="res">
+            <div class="line"><small>1st Derivative</small><code id="r1"></code></div>
+            <div class="line"><small>2nd Derivative</small><code id="r2"></code></div>
+            <div class="line"><small>3rd Derivative</small><code id="r3"></code></div>
+        </div>
+    </div>
+
+    <script>
+        // Floating Symbols
+        const s = ['sin', 'cos', 'tan', 'π', '√', '+', '-', '÷'];
+        for(let i=0; i<15; i++){
+            let d = document.createElement('div');
+            d.className = 'symbol';
+            d.innerText = s[Math.floor(Math.random()*s.length)];
+            d.style.left = Math.random()*100+'vw';
+            d.style.animationDelay = Math.random()*10+'s';
+            document.getElementById('bg').appendChild(d);
+        }
+
+        const input = document.getElementById('eq');
+
+        function add(val) {
+            input.value += val;
+        }
+
+        function solve() {
+            try {
+                const f = input.value;
+                const v = document.getElementById('var').value || 'x';
+                if(!f) return;
+
+                // Solve & Simplify
+                let d1 = math.simplify(math.derivative(f, v));
+                let d2 = math.simplify(math.derivative(d1, v));
+                let d3 = math.simplify(math.derivative(d2, v));
+
+                document.getElementById('r1').innerText = d1.toString();
+                document.getElementById('r2').innerText = d2.toString();
+                document.getElementById('r3').innerText = d3.toString();
+                document.getElementById('out').style.display = 'block';
+            } catch (e) {
+                alert("Math Error! Check your brackets or multiplication.");
+            }
+        }
+
+        function clean() {
+            input.value = '';
+            document.getElementById('out').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
